@@ -1,9 +1,11 @@
-package com.taskflow.service;
+package com.taskflow;
 
 import com.taskflow.dto.RegisterRequest;
 import com.taskflow.entity.User;
 import com.taskflow.exception.UserAlreadyExistsException;
 import com.taskflow.repository.UserRepository;
+import com.taskflow.service.UserService;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

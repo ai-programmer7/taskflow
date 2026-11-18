@@ -20,7 +20,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-
+import com.taskflow.mapper.UserMapper;
 import org.junit.jupiter.api.BeforeEach;
 
 
@@ -48,6 +48,11 @@ class UserControllerTest {
         UserService userService() {
             return mock(UserService.class);
         }
+
+        @Bean
+        UserMapper userMapper() {
+        return new UserMapper();
+        }
     }
 
     @Test
@@ -72,8 +77,8 @@ class UserControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.username").value("testuser"))
-                .andExpect(jsonPath("$.email").value("test@example.com"));
-
+                .andExpect(jsonPath("$.email").value("test@example.com"))
+                .andExpect(jsonPath("$.password").doesNotExist());
         verify(userService).register(any(RegisterRequest.class));
     }
 
