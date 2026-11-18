@@ -1,5 +1,5 @@
 package com.taskflow.service;
-
+import com.taskflow.exception.UserAlreadyExistsException;
 import com.taskflow.dto.RegisterRequest;
 import com.taskflow.entity.User;
 import com.taskflow.repository.UserRepository;
@@ -24,11 +24,11 @@ public class UserService {
     @Transactional
     public User register(RegisterRequest request) {
         if (userRepository.findByUsername(request.username()).isPresent()) {
-            throw new IllegalArgumentException("Username is already taken");
+            throw new UserAlreadyExistsException("Username is already taken");
         }
 
         if (userRepository.findByEmail(request.email()).isPresent()) {
-            throw new IllegalArgumentException("Email is already registered");
+            throw new UserAlreadyExistsException("Email is already registered");
         }
 
         User user = new User();
