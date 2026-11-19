@@ -2,6 +2,7 @@ package com.taskflow.controller;
 
 import com.taskflow.dto.CreateProjectRequest;
 import com.taskflow.dto.ProjectResponse;
+import com.taskflow.dto.UpdateProjectRequest;
 import com.taskflow.service.ProjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,4 +33,18 @@ public class ProjectController {
     public ProjectResponse getById(@PathVariable Long id) {
         return projectService.getById(id);
     }
+
+    @PatchMapping("/{id}")
+    public ProjectResponse update(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateProjectRequest request) {
+        return projectService.update(id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable Long id) {
+        projectService.delete(id);
+    }
+
 }

@@ -3,6 +3,7 @@ package com.taskflow.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taskflow.dto.CreateProjectRequest;
 import com.taskflow.dto.ProjectResponse;
+import com.taskflow.dto.UpdateProjectRequest;
 import com.taskflow.entity.ProjectStatus;
 import com.taskflow.exception.GlobalExceptionHandler;
 import com.taskflow.exception.ProjectNotFoundException;
@@ -16,13 +17,16 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import org.junit.jupiter.api.BeforeEach;
 
 @WebMvcTest(ProjectController.class)
 @Import({
@@ -38,6 +42,19 @@ class ProjectControllerTest {
 
     @Autowired
     private ProjectService projectService;
+    private final ProjectResponse projectResponse = new ProjectResponse(
+            1L,
+            "My First Project",
+            "My first project in TaskFlow",
+            ProjectStatus.COMPLETED,
+            2L,
+            "testuser",
+            LocalDateTime.parse("2026-11-19T19:15:06.491742"));
+
+    @BeforeEach
+    void setUp() {
+        reset(projectService);
+    }
 
     @TestConfiguration
     static class TestConfig {
@@ -143,4 +160,42 @@ class ProjectControllerTest {
         mockMvc.perform(get("/api/projects/99"))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void shouldUpdateProject() throws Exception {
+        UpdateProjectRequest request = new UpdateProjectRequest(
+                null,
+                null,
+                ProjectStatus.COMPLETED);
+
+        when(projectService.update(eq(1L), any(UpdateProjectRequest.class)))
+                .thenReturn(projectResponse);
+
+        mockMvc.perform(patch("/api/projects/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.status").value("COMPLETED"));
+    }
+
+    @Test
+    void shouldDeleteProject() throws Exception {
+        doNothing().when(projectService).delete(1L);
+
+        mockMvc.perform(delete("/api/projects/1"))
+                .andExpect(status().isNoContent());
+
+        verify(projectService).delete(1L);
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenDeletingNonExistingProject() throws Exception {
+        doThrow(new ProjectNotFoundException(999L))
+                .when(projectService).delete(999L);
+
+        mockMvc.perform(delete("/api/projects/999"))
+                .andExpect(status().isNotFound());
+    }
+
 }
