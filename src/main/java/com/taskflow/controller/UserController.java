@@ -8,6 +8,7 @@ import com.taskflow.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
@@ -18,8 +19,7 @@ public class UserController {
 
     public UserController(
             UserService userService,
-            UserMapper userMapper
-    ) {
+            UserMapper userMapper) {
         this.userService = userService;
         this.userMapper = userMapper;
     }
@@ -27,10 +27,21 @@ public class UserController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public UserResponse register(
-            @Valid @RequestBody RegisterRequest request
-    ) {
+            @Valid @RequestBody RegisterRequest request) {
         User user = userService.register(request);
 
         return userMapper.toResponse(user);
+    }
+
+    @GetMapping("/{id}")
+    public UserResponse getById(@PathVariable Long id) {
+        User user = userService.getById(id);
+
+        return userMapper.toResponse(user);
+    }
+
+    @GetMapping
+    public List<UserResponse> getAllUsers() {
+        return userService.getAllUsers();
     }
 }
