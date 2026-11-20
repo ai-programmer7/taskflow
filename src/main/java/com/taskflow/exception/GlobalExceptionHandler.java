@@ -58,4 +58,12 @@ public class GlobalExceptionHandler {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                                 .body(ex.getMessage());
         }
+
+        @ExceptionHandler(TaskNotFoundException.class)
+        public ResponseEntity<String> handleTaskNotFound(
+                        TaskNotFoundException exception) {
+                return ResponseEntity
+                                .status(HttpStatus.NOT_FOUND)
+                                .body(exception.getMessage());
+        }
 }

@@ -2,8 +2,11 @@ package com.taskflow.controller;
 
 import com.taskflow.dto.CreateProjectRequest;
 import com.taskflow.dto.ProjectResponse;
+import com.taskflow.dto.TaskResponse;
 import com.taskflow.dto.UpdateProjectRequest;
 import com.taskflow.service.ProjectService;
+import com.taskflow.service.TaskService;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,6 +20,7 @@ import java.util.List;
 public class ProjectController {
 
     private final ProjectService projectService;
+    private final TaskService taskService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -47,4 +51,9 @@ public class ProjectController {
         projectService.delete(id);
     }
 
+    @GetMapping("/{projectId}/tasks")
+    public List<TaskResponse> getProjectTasks(
+            @PathVariable Long projectId) {
+        return taskService.getByProjectId(projectId);
+    }
 }
