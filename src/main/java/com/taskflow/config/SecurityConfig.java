@@ -32,7 +32,10 @@ public class SecurityConfig {
                                                 // Public endpoints
                                                 .requestMatchers(
                                                                 "/api/auth/**",
-                                                                "/api/health")
+                                                                "/api/health",
+                                                                "/swagger-ui/**",
+                                                                "/swagger-ui.html",
+                                                                "/v3/api-docs/**")
                                                 .permitAll()
 
                                                 // User registration is public
