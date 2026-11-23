@@ -1,4 +1,3 @@
-
 package com.taskflow.service;
 
 import java.time.Instant;
@@ -9,7 +8,6 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
@@ -24,38 +22,38 @@ import com.taskflow.entity.Role;
 @Service
 public class JwtService {
 
-    private final JwtEncoder jwtEncoder;
+        private final JwtEncoder jwtEncoder;
 
-    public JwtService(@Value("${app.jwt.secret}") String secret) {
-        SecretKey secretKey = new SecretKeySpec(
-                secret.getBytes(java.nio.charset.StandardCharsets.UTF_8),
-                "HmacSHA256");
+        public JwtService(@Value("${app.jwt.secret}") String secret) {
+                SecretKey secretKey = new SecretKeySpec(
+                                secret.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                                "HmacSHA256");
 
-        this.jwtEncoder = new NimbusJwtEncoder(
-                new ImmutableSecret<>(secretKey));
-    }
+                this.jwtEncoder = new NimbusJwtEncoder(
+                                new ImmutableSecret<>(secretKey));
+        }
 
-    public String generateToken(User user) {
-        Instant now = Instant.now();
+        public String generateToken(User user) {
+                Instant now = Instant.now();
 
-        List<String> roles = user.getRoles()
-                .stream()
-                .map(Role::getName)
-                .toList();
+                List<String> roles = user.getRoles()
+                                .stream()
+                                .map(Role::getName)
+                                .toList();
 
-        JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer("taskflow")
-                .issuedAt(now)
-                .expiresAt(now.plus(24, ChronoUnit.HOURS))
-                .subject(user.getUsername())
-                .claim("roles", roles)
-                .build();
+                JwtClaimsSet claims = JwtClaimsSet.builder()
+                                .issuer("taskflow")
+                                .issuedAt(now)
+                                .expiresAt(now.plus(24, ChronoUnit.HOURS))
+                                .subject(user.getUsername())
+                                .claim("roles", roles)
+                                .build();
 
-        JwtEncoderParameters parameters = JwtEncoderParameters.from(
-                JwsHeader.with(MacAlgorithm.HS256).build(),
-                claims);
+                JwtEncoderParameters parameters = JwtEncoderParameters.from(
+                                JwsHeader.with(MacAlgorithm.HS256).build(),
+                                claims);
 
-        return jwtEncoder.encode(parameters).getTokenValue();
-    }
+                return jwtEncoder.encode(parameters).getTokenValue();
+        }
 
 }

@@ -4,7 +4,6 @@ package com.taskflow.service;
 import com.taskflow.dto.AuthResponse;
 import com.taskflow.dto.LoginRequest;
 import com.taskflow.entity.User;
-import com.taskflow.exception.UserNotFoundException;
 import com.taskflow.repository.UserRepository;
 
 import org.springframework.security.authentication.BadCredentialsException;

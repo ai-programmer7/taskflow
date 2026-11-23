@@ -21,85 +21,84 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
-    @Mock
-    private UserRepository userRepository;
+        @Mock
+        private UserRepository userRepository;
 
-    @Mock
-    private PasswordEncoder passwordEncoder;
+        @Mock
+        private PasswordEncoder passwordEncoder;
 
-    @Mock
-    private JwtService jwtService;
+        @Mock
+        private JwtService jwtService;
 
-    @InjectMocks
-    private AuthService authService;
+        @InjectMocks
+        private AuthService authService;
 
-    @Test
-    void shouldLoginSuccessfully() {
-        LoginRequest request = new LoginRequest(
-                "testuser",
-                "password123");
+        @Test
+        void shouldLoginSuccessfully() {
+                LoginRequest request = new LoginRequest(
+                                "testuser",
+                                "password123");
 
-        User user = new User();
-        user.setUsername("testuser");
-        user.setPassword("encodedPassword");
+                User user = new User();
+                user.setUsername("testuser");
+                user.setPassword("encodedPassword");
 
-        when(userRepository.findByUsername("testuser"))
-                .thenReturn(Optional.of(user));
+                when(userRepository.findByUsername("testuser"))
+                                .thenReturn(Optional.of(user));
 
-        when(passwordEncoder.matches("password123", "encodedPassword"))
-                .thenReturn(true);
+                when(passwordEncoder.matches("password123", "encodedPassword"))
+                                .thenReturn(true);
 
-        when(jwtService.generateToken(user))
-                .thenReturn("test-jwt-token");
-        AuthResponse response = authService.login(request);
+                when(jwtService.generateToken(user))
+                                .thenReturn("test-jwt-token");
+                AuthResponse response = authService.login(request);
 
-        assertThat(response.token()).isEqualTo("test-jwt-token");
+                assertThat(response.token()).isEqualTo("test-jwt-token");
 
-        verify(userRepository).findByUsername("testuser");
-        verify(passwordEncoder).matches("password123", "encodedPassword");
-        verify(jwtService).generateToken(user);
-    }
+                verify(userRepository).findByUsername("testuser");
+                verify(passwordEncoder).matches("password123", "encodedPassword");
+                verify(jwtService).generateToken(user);
+        }
 
-    @Test
-    void shouldThrowExceptionWhenUserDoesNotExist() {
-        LoginRequest request = new LoginRequest(
-                "unknown",
-                "password123");
+        @Test
+        void shouldThrowExceptionWhenUserDoesNotExist() {
+                LoginRequest request = new LoginRequest(
+                                "unknown",
+                                "password123");
 
-        when(userRepository.findByUsername("unknown"))
-                .thenReturn(Optional.empty());
+                when(userRepository.findByUsername("unknown"))
+                                .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> authService.login(request))
-                .isInstanceOf(BadCredentialsException.class);
+                assertThatThrownBy(() -> authService.login(request))
+                                .isInstanceOf(BadCredentialsException.class);
 
-        verify(jwtService, never()).generateToken(any(User.class));
-    }
+                verify(jwtService, never()).generateToken(any(User.class));
+        }
 
-    @Test
-    void shouldThrowExceptionWhenPasswordIsIncorrect() {
-        LoginRequest request = new LoginRequest(
-                "testuser",
-                "wrongPassword");
+        @Test
+        void shouldThrowExceptionWhenPasswordIsIncorrect() {
+                LoginRequest request = new LoginRequest(
+                                "testuser",
+                                "wrongPassword");
 
-        User user = new User();
-        user.setUsername("testuser");
-        user.setPassword("encodedPassword");
+                User user = new User();
+                user.setUsername("testuser");
+                user.setPassword("encodedPassword");
 
-        when(userRepository.findByUsername("testuser"))
-                .thenReturn(Optional.of(user));
+                when(userRepository.findByUsername("testuser"))
+                                .thenReturn(Optional.of(user));
 
-        when(passwordEncoder.matches("wrongPassword", "encodedPassword"))
-                .thenReturn(false);
+                when(passwordEncoder.matches("wrongPassword", "encodedPassword"))
+                                .thenReturn(false);
 
-        assertThatThrownBy(() -> authService.login(request))
-                .isInstanceOf(BadCredentialsException.class);
+                assertThatThrownBy(() -> authService.login(request))
+                                .isInstanceOf(BadCredentialsException.class);
 
-        verify(jwtService, never()).generateToken(any(User.class));
-    }
+                verify(jwtService, never()).generateToken(any(User.class));
+        }
 }
