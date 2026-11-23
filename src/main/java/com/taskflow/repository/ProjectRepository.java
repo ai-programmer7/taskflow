@@ -5,8 +5,14 @@ import com.taskflow.entity.Project;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ProjectRepository extends JpaRepository<Project, Long> {
 
     List<Project> findByOwnerId(Long ownerId);
+
+    List<Project> findByOwnerUsername(String username);
+
+    Optional<Project> findByIdAndOwnerUsername(Long id, String username);
+
 }

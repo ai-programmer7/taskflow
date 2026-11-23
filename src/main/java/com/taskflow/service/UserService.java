@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import com.taskflow.dto.UserResponse;
 import com.taskflow.mapper.UserMapper;
+import com.taskflow.repository.RoleRepository;
+import com.taskflow.entity.Role;
 
 @Service
 public class UserService {
@@ -18,14 +20,17 @@ public class UserService {
     private final UserMapper userMapper;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final RoleRepository roleRepository;
 
     public UserService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            UserMapper userMapper) {
+            UserMapper userMapper,
+            RoleRepository roleRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userMapper = userMapper;
+        this.roleRepository = roleRepository;
     }
 
     @Transactional
@@ -38,10 +43,15 @@ public class UserService {
             throw new UserAlreadyExistsException("Email is already registered");
         }
 
+        Role userRole = roleRepository.findByName("ROLE_USER")
+                .orElseThrow(() -> new IllegalStateException(
+                        "Default role ROLE_USER not found"));
+
         User user = new User();
         user.setUsername(request.username());
         user.setEmail(request.email());
         user.setPassword(passwordEncoder.encode(request.password()));
+        user.getRoles().add(userRole);
 
         return userRepository.save(user);
     }
@@ -59,5 +69,13 @@ public class UserService {
                 .stream()
                 .map(userMapper::toResponse)
                 .toList();
+    }
+
+    @Transactional
+    public void deleteUser(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException(id));
+
+        userRepository.delete(user);
     }
 }

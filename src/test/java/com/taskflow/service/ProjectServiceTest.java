@@ -25,183 +25,207 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @ExtendWith(MockitoExtension.class)
 class ProjectServiceTest {
 
-    @Mock
-    private ProjectRepository projectRepository;
+        @Mock
+        private ProjectRepository projectRepository;
 
-    @Mock
-    private UserRepository userRepository;
+        @Mock
+        private UserRepository userRepository;
 
-    @Mock
-    private ProjectMapper projectMapper;
+        @Mock
+        private ProjectMapper projectMapper;
 
-    @InjectMocks
-    private ProjectService projectService;
+        @InjectMocks
+        private ProjectService projectService;
 
-    private User owner;
-    private Project project;
-    private ProjectResponse projectResponse;
+        private User owner;
+        private Project project;
+        private ProjectResponse projectResponse;
 
-    @BeforeEach
-    void setUp() {
-        owner = new User();
-        owner.setId(1L);
-        owner.setUsername("testuser");
+        @BeforeEach
+        void setUp() {
+                SecurityContextHolder.getContext().setAuthentication(
+                                new UsernamePasswordAuthenticationToken(
+                                                "testuser",
+                                                null,
+                                                List.of()));
+                owner = new User();
+                owner.setId(1L);
+                owner.setUsername("testuser");
 
-        project = new Project();
-        project.setId(1L);
-        project.setName("TaskFlow");
-        project.setDescription("Task management project");
-        project.setStatus(ProjectStatus.ACTIVE);
-        project.setOwner(owner);
+                project = new Project();
+                project.setId(1L);
+                project.setName("TaskFlow");
+                project.setDescription("Task management project");
+                project.setStatus(ProjectStatus.ACTIVE);
+                project.setOwner(owner);
 
-        projectResponse = new ProjectResponse(
-                1L,
-                "TaskFlow",
-                "Task management project",
-                ProjectStatus.ACTIVE,
-                1L,
-                "testuser",
-                null);
-    }
+                projectResponse = new ProjectResponse(
+                                1L,
+                                "TaskFlow",
+                                "Task management project",
+                                ProjectStatus.ACTIVE,
+                                1L,
+                                "testuser",
+                                null);
+        }
 
-    @Test
-    void shouldCreateProject() {
-        CreateProjectRequest request = new CreateProjectRequest(
-                "TaskFlow",
-                "Task management project",
-                ProjectStatus.ACTIVE,
-                1L);
+        @Test
+        void shouldCreateProject() {
+                CreateProjectRequest request = new CreateProjectRequest(
+                                "TaskFlow",
+                                "Task management project",
+                                ProjectStatus.ACTIVE);
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
-        when(projectRepository.save(any(Project.class))).thenReturn(project);
-        when(projectMapper.toResponse(project)).thenReturn(projectResponse);
+                when(userRepository.findByUsername("testuser"))
+                                .thenReturn(Optional.of(owner));
 
-        ProjectResponse result = projectService.create(request);
+                when(projectRepository.save(any(Project.class)))
+                                .thenReturn(project);
 
-        assertThat(result).isEqualTo(projectResponse);
+                when(projectMapper.toResponse(project))
+                                .thenReturn(projectResponse);
 
-        verify(userRepository).findById(1L);
-        verify(projectRepository).save(any(Project.class));
-        verify(projectMapper).toResponse(project);
-    }
+                ProjectResponse result = projectService.create(request);
 
-    @Test
-    void shouldThrowExceptionWhenOwnerNotFound() {
-        CreateProjectRequest request = new CreateProjectRequest(
-                "TaskFlow",
-                "Description",
-                ProjectStatus.ACTIVE,
-                99L);
+                assertThat(result).isEqualTo(projectResponse);
 
-        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+                verify(userRepository).findByUsername("testuser");
+                verify(projectRepository).save(any(Project.class));
+                verify(projectMapper).toResponse(project);
+        }
 
-        assertThatThrownBy(() -> projectService.create(request))
-                .isInstanceOf(UserNotFoundException.class);
+        @Test
+        void shouldThrowExceptionWhenOwnerNotFound() {
+                CreateProjectRequest request = new CreateProjectRequest(
+                                "TaskFlow",
+                                "Description",
+                                ProjectStatus.ACTIVE);
 
-        verify(projectRepository, never()).save(any(Project.class));
-    }
+                when(userRepository.findByUsername("testuser"))
+                                .thenReturn(Optional.empty());
 
-    @Test
-    void shouldReturnAllProjects() {
-        when(projectRepository.findAll()).thenReturn(List.of(project));
-        when(projectMapper.toResponse(project)).thenReturn(projectResponse);
+                assertThatThrownBy(() -> projectService.create(request))
+                                .isInstanceOf(UserNotFoundException.class);
 
-        List<ProjectResponse> result = projectService.getAll();
+                verify(projectRepository, never()).save(any(Project.class));
+        }
 
-        assertThat(result)
-                .hasSize(1)
-                .containsExactly(projectResponse);
+        @Test
+        void shouldReturnAllProjects() {
+                when(projectRepository.findByOwnerUsername("testuser"))
+                                .thenReturn(List.of(project));
 
-        verify(projectRepository).findAll();
-        verify(projectMapper).toResponse(project);
-    }
+                when(projectMapper.toResponse(project))
+                                .thenReturn(projectResponse);
 
-    @Test
-    void shouldReturnProjectById() {
-        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
-        when(projectMapper.toResponse(project)).thenReturn(projectResponse);
+                List<ProjectResponse> result = projectService.getAll();
 
-        ProjectResponse result = projectService.getById(1L);
+                assertThat(result)
+                                .hasSize(1)
+                                .containsExactly(projectResponse);
 
-        assertThat(result).isEqualTo(projectResponse);
+                verify(projectRepository).findByOwnerUsername("testuser");
+                verify(projectMapper).toResponse(project);
+        }
 
-        verify(projectRepository).findById(1L);
-        verify(projectMapper).toResponse(project);
-    }
+        @Test
+        void shouldReturnProjectById() {
+                when(projectRepository.findByIdAndOwnerUsername(1L, "testuser"))
+                                .thenReturn(Optional.of(project));
 
-    @Test
-    void shouldThrowExceptionWhenProjectNotFound() {
-        when(projectRepository.findById(99L)).thenReturn(Optional.empty());
+                when(projectMapper.toResponse(project))
+                                .thenReturn(projectResponse);
 
-        assertThatThrownBy(() -> projectService.getById(99L))
-                .isInstanceOf(ProjectNotFoundException.class);
+                ProjectResponse result = projectService.getById(1L);
 
-        verify(projectMapper, never()).toResponse(any(Project.class));
-    }
+                assertThat(result).isEqualTo(projectResponse);
 
-    @Test
-    void shouldUpdateProject() {
-        UpdateProjectRequest request = new UpdateProjectRequest(
-                null,
-                null,
-                ProjectStatus.COMPLETED);
+                verify(projectRepository).findByIdAndOwnerUsername(1L, "testuser");
+                verify(projectMapper).toResponse(project);
+        }
 
-        when(projectRepository.findById(1L))
-                .thenReturn(Optional.of(project));
+        @Test
+        void shouldThrowExceptionWhenProjectNotFound() {
+                when(projectRepository.findByIdAndOwnerUsername(99L, "testuser"))
+                                .thenReturn(Optional.empty());
 
-        when(projectRepository.save(project))
-                .thenReturn(project);
+                assertThatThrownBy(() -> projectService.getById(99L))
+                                .isInstanceOf(ProjectNotFoundException.class);
 
-        when(projectMapper.toResponse(project))
-                .thenReturn(projectResponse);
+                verify(projectMapper, never()).toResponse(any(Project.class));
+        }
 
-        ProjectResponse result = projectService.update(1L, request);
+        @Test
+        void shouldUpdateProject() {
+                UpdateProjectRequest request = new UpdateProjectRequest(
+                                null,
+                                null,
+                                ProjectStatus.COMPLETED);
 
-        assertThat(project.getStatus()).isEqualTo(ProjectStatus.COMPLETED);
-        assertThat(result).isEqualTo(projectResponse);
+                when(projectRepository.findByIdAndOwnerUsername(1L, "testuser"))
+                                .thenReturn(Optional.of(project));
 
-        verify(projectRepository).save(project);
-    }
+                when(projectRepository.save(project))
+                                .thenReturn(project);
 
-    @Test
-    void shouldThrowExceptionWhenUpdatingNonExistingProject() {
-        UpdateProjectRequest request = new UpdateProjectRequest(
-                "Updated name",
-                null,
-                null);
+                when(projectMapper.toResponse(project))
+                                .thenReturn(projectResponse);
 
-        when(projectRepository.findById(999L))
-                .thenReturn(Optional.empty());
+                ProjectResponse result = projectService.update(1L, request);
 
-        assertThatThrownBy(() -> projectService.update(999L, request))
-                .isInstanceOf(ProjectNotFoundException.class);
+                assertThat(project.getStatus()).isEqualTo(ProjectStatus.COMPLETED);
+                assertThat(result).isEqualTo(projectResponse);
 
-        verify(projectRepository, never()).save(any(Project.class));
-    }
+                verify(projectRepository).findByIdAndOwnerUsername(1L, "testuser");
+                verify(projectRepository).save(project);
+        }
 
-    @Test
-    void shouldDeleteProject() {
-        when(projectRepository.findById(1L))
-                .thenReturn(Optional.of(project));
+        @Test
+        void shouldThrowExceptionWhenUpdatingNonExistingProject() {
+                UpdateProjectRequest request = new UpdateProjectRequest(
+                                "Updated name",
+                                null,
+                                null);
 
-        projectService.delete(1L);
+                when(projectRepository.findByIdAndOwnerUsername(999L, "testuser"))
+                                .thenReturn(Optional.empty());
 
-        verify(projectRepository).delete(project);
-    }
+                assertThatThrownBy(() -> projectService.update(999L, request))
+                                .isInstanceOf(ProjectNotFoundException.class);
 
-    @Test
-    void shouldThrowExceptionWhenDeletingNonExistingProject() {
-        when(projectRepository.findById(999L))
-                .thenReturn(Optional.empty());
+                verify(projectRepository, never()).save(any(Project.class));
+        }
 
-        assertThatThrownBy(() -> projectService.delete(999L))
-                .isInstanceOf(ProjectNotFoundException.class);
+        @Test
+        void shouldDeleteProject() {
+                when(projectRepository.findByIdAndOwnerUsername(1L, "testuser"))
+                                .thenReturn(Optional.of(project));
 
-        verify(projectRepository, never()).delete(any(Project.class));
-    }
+                projectService.delete(1L);
 
+                verify(projectRepository).findByIdAndOwnerUsername(1L, "testuser");
+                verify(projectRepository).delete(project);
+        }
+
+        @Test
+        void shouldThrowExceptionWhenDeletingNonExistingProject() {
+                when(projectRepository.findByIdAndOwnerUsername(999L, "testuser"))
+                                .thenReturn(Optional.empty());
+
+                assertThatThrownBy(() -> projectService.delete(999L))
+                                .isInstanceOf(ProjectNotFoundException.class);
+
+                verify(projectRepository, never()).delete(any(Project.class));
+        }
+
+        @org.junit.jupiter.api.AfterEach
+        void tearDown() {
+                SecurityContextHolder.clearContext();
+        }
 }

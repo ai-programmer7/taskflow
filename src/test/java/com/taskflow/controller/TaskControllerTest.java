@@ -13,6 +13,7 @@ import com.taskflow.service.TaskService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.boot.validation.autoconfigure.ValidationAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -20,16 +21,17 @@ import org.springframework.context.annotation.Import;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.time.LocalDate;
 import java.util.List;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(TaskController.class)
+@AutoConfigureMockMvc(addFilters = false)
 @Import({
                 GlobalExceptionHandler.class,
                 TaskControllerTest.TestConfig.class,
@@ -88,7 +90,8 @@ class TaskControllerTest {
                 when(taskService.create(any(CreateTaskRequest.class)))
                                 .thenReturn(response);
 
-                mockMvc.perform(MockMvcRequestBuilders.post("/api/tasks")
+                mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                .post("/api/tasks")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isCreated())
@@ -110,7 +113,8 @@ class TaskControllerTest {
                                 }
                                 """;
 
-                mockMvc.perform(MockMvcRequestBuilders.post("/api/tasks")
+                mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                .post("/api/tasks")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(invalidRequest))
                                 .andExpect(status().isBadRequest());
@@ -135,7 +139,8 @@ class TaskControllerTest {
 
                 when(taskService.getAll()).thenReturn(List.of(response));
 
-                mockMvc.perform(MockMvcRequestBuilders.get("/api/tasks"))
+                mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                .get("/api/tasks"))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$[0].id").value(1))
                                 .andExpect(jsonPath("$[0].title").value("Test task"));
@@ -160,7 +165,8 @@ class TaskControllerTest {
 
                 when(taskService.getById(1L)).thenReturn(response);
 
-                mockMvc.perform(MockMvcRequestBuilders.get("/api/tasks/1"))
+                mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                .get("/api/tasks/1"))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.id").value(1))
                                 .andExpect(jsonPath("$.title").value("Test task"));
@@ -173,7 +179,8 @@ class TaskControllerTest {
                 when(taskService.getById(999L))
                                 .thenThrow(new TaskNotFoundException(999L));
 
-                mockMvc.perform(MockMvcRequestBuilders.get("/api/tasks/999"))
+                mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                .get("/api/tasks/999"))
                                 .andExpect(status().isNotFound());
         }
 
@@ -200,9 +207,11 @@ class TaskControllerTest {
                                 null,
                                 null);
 
-                when(taskService.update(1L, request)).thenReturn(response);
+                when(taskService.update(eq(1L), any(UpdateTaskRequest.class)))
+                                .thenReturn(response);
 
-                mockMvc.perform(MockMvcRequestBuilders.patch("/api/tasks/1")
+                mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                .patch("/api/tasks/1")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isOk())
@@ -225,7 +234,8 @@ class TaskControllerTest {
                 when(taskService.update(eq(999L), any(UpdateTaskRequest.class)))
                                 .thenThrow(new TaskNotFoundException(999L));
 
-                mockMvc.perform(MockMvcRequestBuilders.patch("/api/tasks/999")
+                mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                .patch("/api/tasks/999")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isNotFound());
@@ -233,7 +243,8 @@ class TaskControllerTest {
 
         @Test
         void shouldDeleteTask() throws Exception {
-                mockMvc.perform(MockMvcRequestBuilders.delete("/api/tasks/1"))
+                mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                .delete("/api/tasks/1"))
                                 .andExpect(status().isNoContent());
 
                 verify(taskService).delete(1L);
@@ -244,10 +255,10 @@ class TaskControllerTest {
                 doThrow(new TaskNotFoundException(999L))
                                 .when(taskService).delete(999L);
 
-                mockMvc.perform(MockMvcRequestBuilders.delete("/api/tasks/999"))
+                mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                .delete("/api/tasks/999"))
                                 .andExpect(status().isNotFound());
 
                 verify(taskService).delete(999L);
         }
-
 }

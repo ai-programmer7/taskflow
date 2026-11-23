@@ -5,6 +5,7 @@ import com.taskflow.dto.UserResponse;
 import com.taskflow.entity.User;
 import com.taskflow.exception.UserAlreadyExistsException;
 import com.taskflow.exception.UserNotFoundException;
+import com.taskflow.repository.RoleRepository;
 import com.taskflow.repository.UserRepository;
 import com.taskflow.service.UserService;
 
@@ -23,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import com.taskflow.mapper.UserMapper;
+import com.taskflow.entity.Role;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -36,6 +38,9 @@ class UserServiceTest {
         @Mock
         private UserMapper userMapper;
 
+        @Mock
+        private RoleRepository roleRepository;
+
         @InjectMocks
         private UserService userService;
 
@@ -45,6 +50,13 @@ class UserServiceTest {
                                 "testuser",
                                 "test@example.com",
                                 "StrongPass123");
+
+                Role userRole = new Role();
+                userRole.setId(1L);
+                userRole.setName("ROLE_USER");
+
+                when(roleRepository.findByName("ROLE_USER"))
+                                .thenReturn(Optional.of(userRole));
 
                 when(userRepository.findByUsername("testuser"))
                                 .thenReturn(Optional.empty());
@@ -68,6 +80,8 @@ class UserServiceTest {
                 assertThat(result.getUsername()).isEqualTo("testuser");
                 assertThat(result.getEmail()).isEqualTo("test@example.com");
                 assertThat(result.getPassword()).isEqualTo("bcrypt-hash");
+                assertThat(result.getRoles())
+                                .anySatisfy(role -> assertThat(role.getName()).isEqualTo("ROLE_USER"));
 
                 verify(passwordEncoder).encode("StrongPass123");
                 verify(userRepository).save(any(User.class));
@@ -171,4 +185,27 @@ class UserServiceTest {
                 verify(userMapper).toResponse(secondUser);
         }
 
+        @Test
+        void shouldDeleteUser() {
+                User user = new User();
+                user.setId(1L);
+
+                when(userRepository.findById(1L))
+                                .thenReturn(Optional.of(user));
+
+                userService.deleteUser(1L);
+
+                verify(userRepository).delete(user);
+        }
+
+        @Test
+        void shouldThrowExceptionWhenDeletingNonExistingUser() {
+                when(userRepository.findById(1L))
+                                .thenReturn(Optional.empty());
+
+                assertThatThrownBy(() -> userService.deleteUser(1L))
+                                .isInstanceOf(UserNotFoundException.class);
+
+                verify(userRepository, never()).delete(any(User.class));
+        }
 }

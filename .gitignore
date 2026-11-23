@@ -35,3 +35,4 @@ build/
 
 classpath.txt
 test-errors.txt
+.env

@@ -19,7 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import com.taskflow.mapper.UserMapper;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -176,5 +176,22 @@ class UserControllerTest {
                                 .andExpect(jsonPath("$[0].password").doesNotExist());
 
                 verify(userService).getAllUsers();
+        }
+
+        @Test
+        void shouldDeleteUser() throws Exception {
+                mockMvc.perform(delete("/api/users/1"))
+                                .andExpect(status().isNoContent());
+
+                verify(userService).deleteUser(1L);
+        }
+
+        @Test
+        void shouldReturnNotFoundWhenDeletingNonExistingUser() throws Exception {
+                doThrow(new UserNotFoundException(1L))
+                                .when(userService).deleteUser(1L);
+
+                mockMvc.perform(delete("/api/users/1"))
+                                .andExpect(status().isNotFound());
         }
 }

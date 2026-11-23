@@ -13,7 +13,8 @@ import com.taskflow.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.List;
 
 @Service
@@ -26,8 +27,13 @@ public class ProjectService {
 
     @Transactional
     public ProjectResponse create(CreateProjectRequest request) {
-        User owner = userRepository.findById(request.ownerId())
-                .orElseThrow(() -> new UserNotFoundException(request.ownerId()));
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        String username = authentication.getName();
+
+        User owner = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException(
+                        "User not found: " + username));
 
         Project project = new Project();
         project.setName(request.name());
@@ -42,7 +48,11 @@ public class ProjectService {
 
     @Transactional(readOnly = true)
     public List<ProjectResponse> getAll() {
-        return projectRepository.findAll()
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        String username = authentication.getName();
+
+        return projectRepository.findByOwnerUsername(username)
                 .stream()
                 .map(projectMapper::toResponse)
                 .toList();
@@ -50,7 +60,12 @@ public class ProjectService {
 
     @Transactional(readOnly = true)
     public ProjectResponse getById(Long id) {
-        Project project = projectRepository.findById(id)
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        String username = authentication.getName();
+
+        Project project = projectRepository
+                .findByIdAndOwnerUsername(id, username)
                 .orElseThrow(() -> new ProjectNotFoundException(id));
 
         return projectMapper.toResponse(project);
@@ -58,7 +73,12 @@ public class ProjectService {
 
     @Transactional
     public ProjectResponse update(Long id, UpdateProjectRequest request) {
-        Project project = projectRepository.findById(id)
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        String username = authentication.getName();
+
+        Project project = projectRepository
+                .findByIdAndOwnerUsername(id, username)
                 .orElseThrow(() -> new ProjectNotFoundException(id));
 
         if (request.name() != null) {
@@ -80,7 +100,12 @@ public class ProjectService {
 
     @Transactional
     public void delete(Long id) {
-        Project project = projectRepository.findById(id)
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        String username = authentication.getName();
+
+        Project project = projectRepository
+                .findByIdAndOwnerUsername(id, username)
                 .orElseThrow(() -> new ProjectNotFoundException(id));
 
         projectRepository.delete(project);

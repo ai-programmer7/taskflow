@@ -85,8 +85,7 @@ class ProjectControllerTest {
                 CreateProjectRequest request = new CreateProjectRequest(
                                 "TaskFlow",
                                 "Task management project",
-                                ProjectStatus.ACTIVE,
-                                1L);
+                                ProjectStatus.ACTIVE);
 
                 ProjectResponse response = new ProjectResponse(
                                 1L,
@@ -116,8 +115,7 @@ class ProjectControllerTest {
                                 {
                                     "name": "",
                                     "description": "Description",
-                                    "status": "ACTIVE",
-                                    "ownerId": 1
+                                    "status": "ACTIVE"
                                 }
                                 """;
 

@@ -17,6 +17,8 @@ import com.taskflow.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 
@@ -31,8 +33,10 @@ public class TaskService {
 
     @Transactional
     public TaskResponse create(CreateTaskRequest request) {
+        String username = getCurrentUsername();
 
-        Project project = projectRepository.findById(request.projectId())
+        Project project = projectRepository
+                .findByIdAndOwnerUsername(request.projectId(), username)
                 .orElseThrow(() -> new ProjectNotFoundException(request.projectId()));
 
         User assignee = null;
@@ -58,7 +62,9 @@ public class TaskService {
 
     @Transactional(readOnly = true)
     public List<TaskResponse> getAll() {
-        return taskRepository.findAll()
+        String username = getCurrentUsername();
+
+        return taskRepository.findByProjectOwnerUsername(username)
                 .stream()
                 .map(taskMapper::toResponse)
                 .toList();
@@ -66,12 +72,13 @@ public class TaskService {
 
     @Transactional(readOnly = true)
     public List<TaskResponse> getByProjectId(Long projectId) {
+        String username = getCurrentUsername();
 
-        if (!projectRepository.existsById(projectId)) {
-            throw new ProjectNotFoundException(projectId);
-        }
+        Project project = projectRepository
+                .findByIdAndOwnerUsername(projectId, username)
+                .orElseThrow(() -> new ProjectNotFoundException(projectId));
 
-        return taskRepository.findByProjectId(projectId)
+        return taskRepository.findByProjectId(project.getId())
                 .stream()
                 .map(taskMapper::toResponse)
                 .toList();
@@ -79,7 +86,10 @@ public class TaskService {
 
     @Transactional(readOnly = true)
     public TaskResponse getById(Long id) {
-        Task task = taskRepository.findById(id)
+        String username = getCurrentUsername();
+
+        Task task = taskRepository
+                .findByIdAndProjectOwnerUsername(id, username)
                 .orElseThrow(() -> new TaskNotFoundException(id));
 
         return taskMapper.toResponse(task);
@@ -87,8 +97,10 @@ public class TaskService {
 
     @Transactional
     public TaskResponse update(Long id, UpdateTaskRequest request) {
+        String username = getCurrentUsername();
 
-        Task task = taskRepository.findById(id)
+        Task task = taskRepository
+                .findByIdAndProjectOwnerUsername(id, username)
                 .orElseThrow(() -> new TaskNotFoundException(id));
 
         if (request.title() != null) {
@@ -125,10 +137,18 @@ public class TaskService {
 
     @Transactional
     public void delete(Long id) {
-        Task task = taskRepository.findById(id)
+        String username = getCurrentUsername();
+
+        Task task = taskRepository
+                .findByIdAndProjectOwnerUsername(id, username)
                 .orElseThrow(() -> new TaskNotFoundException(id));
 
         taskRepository.delete(task);
     }
 
+    private String getCurrentUsername() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        return authentication.getName();
+    }
 }
