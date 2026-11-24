@@ -135,6 +135,8 @@ http://localhost:8080/swagger-ui.html
 
 ## Примеры использования API
 
+![Swagger UI — интерактивная документация TaskFlow API](docs/images/swagger-api.png)
+
 Все защищённые эндпоинты требуют JWT-токен в заголовке `Authorization`.
 
 ### 1. Регистрация пользователя
@@ -346,6 +348,8 @@ http://localhost:8080/swagger-ui.html
 Swagger UI allows you to explore API endpoints, inspect request parameters, and send HTTP requests.
 
 ## API Usage Examples
+
+![Swagger UI — interactive TaskFlow API documentation](docs/images/swagger-api.png)
 
 All protected endpoints require a JWT token in the `Authorization` header.
 
